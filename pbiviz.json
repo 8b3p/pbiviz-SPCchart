@@ -1,0 +1,24 @@
+{
+  "visual": {
+    "name": "cccspc",
+    "displayName": "SPC Chart",
+    "guid": "cccspc4ED55BCABCEB410C8AAC1EE5B953359D",
+    "visualClassName": "Visual",
+    "version": "1.0.0",
+    "description": "SPC chart",
+    "supportUrl": "https://community.powerbi.com",
+    "gitHubUrl": ""
+  },
+  "apiVersion": "5.1.0",
+  "author": {
+    "name": "OmerDillmann",
+    "email": "odillmann@axadvisory.com"
+  },
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json",
+  "dependencies": null,
+  "stringResources": []
+}

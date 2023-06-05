@@ -1,0 +1,120 @@
+{
+  "dataRoles": [
+    {
+      "displayName": "Point Value",
+      "name": "PointValue",
+      "kind": "Measure"
+    },
+    {
+      "displayName": "Point Date",
+      "name": "PointDate",
+      "kind": "Grouping"
+    },
+    {
+      "displayName": "Upper Limit",
+      "name": "UpperLimit",
+      "kind": "Measure"
+    },
+    {
+      "displayName": "Lower Limit",
+      "name": "LowerLimit",
+      "kind": "Measure"
+    },
+    {
+      "displayName": "Target",
+      "name": "Target",
+      "kind": "Measure"
+    },
+    {
+      "displayName": "Color",
+      "name": "Color",
+      "kind": "Measure"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "categorical": {
+        "categories": {
+          "for": {
+            "in": "PointDate"
+          }
+        },
+        "values": {
+          "select": [
+            {
+              "bind": {
+                "to": "PointValue"
+              }
+            },
+            {
+              "bind": {
+                "to": "UpperLimit"
+              }
+            },
+            {
+              "bind": {
+                "to": "Color"
+              }
+            },
+            {
+              "bind": {
+                "to": "LowerLimit"
+              }
+            },
+            {
+              "bind": {
+                "to": "Target"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "objects": {
+    "general": {
+      "properties": {
+        "showTitleText": {
+          "type": {
+            "bool": true
+          }
+        },
+        "circleRadius": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "textSize": {
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "margins": {
+      "properties": {
+        "marginLeft": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "marginRight": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "marginBottom": {
+          "type": {
+            "numeric": true
+          }
+        },
+        "marginTop": {
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    }
+  },
+  "privileges": []
+}
