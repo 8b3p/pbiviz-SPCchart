@@ -134,6 +134,7 @@ export class Visual implements IVisual {
                     }
                 }
             }
+            const median = values.length % 2 === 0 ? ((values[values.length / 2] + values[values.length / 2 - 1]) / 2) : values[values.length / 2];
             const categoryArray = new Array(values.length)
                 .fill({ value: null, date: null, color: "blue" })
                 .map((_, i) => ({
@@ -142,12 +143,12 @@ export class Visual implements IVisual {
                     color: color && color.length ? color[i] === "G" ? "green" : color[i] === "R" ? "red" : "blue" : "blue"
                 }));
             const std = this.std(categoryArray.map(d => d.value))
-            console.log(std)
             const Data: IData = {
                 upperLimit,
                 lowerLimit,
                 target,
                 std,
+                median,
                 categorical: categoryArray
             }
             return Data;
@@ -159,7 +160,6 @@ export class Visual implements IVisual {
     private std(data: number[]): number {
         // Step 1: Calculate the mean
         const mean = data.reduce((sum, value) => sum + value, 0) / data.length;
-
         // Step 2: Calculate the squared differences from the mean
         const squaredDifferences = data.map((value) => (value - mean) ** 2);
 

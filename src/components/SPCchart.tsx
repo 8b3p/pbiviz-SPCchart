@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useRef, useLayoutEffect } from 'react';
-import { max, min, scaleTime, scaleLinear, axisBottom, axisLeft, select, line, axisRight } from 'd3'
+import { max, min, scaleTime, scaleLinear, axisBottom, axisLeft, select, line, axisRight, format, forceSimulation, forceX, forceY, forceCollide } from 'd3'
 import * as d3Tip from 'd3-tip';
 
 export interface IData {
@@ -13,6 +13,7 @@ export interface IData {
   lowerLimit: number;
   std: number;
   target: number;
+  median: number;
 }
 
 export interface VisualSettings {
@@ -73,17 +74,18 @@ const SPCChart = ({
       .domain(dateRange)
       .range([0, Width])
 
-    const maxValue = max([max(data.categorical, d => d.value), data.upperLimit, data.target + data.std])
-    const minValue = min([min(data.categorical, d => d.value), data.lowerLimit, data.target - data.std])
+    const maxValue = max([max(data.categorical, d => d.value), data.upperLimit, data.lowerLimit + data.std])
+    const minValue = min([min(data.categorical, d => d.value), data.lowerLimit, data.upperLimit - data.std])
     const dataOffset = (maxValue - minValue) / 10;
-    console.log("minValue", minValue)
     const y = scaleLinear()
-      .domain([minValue, maxValue + dataOffset])
-      .range([Height, 0]);
+      .domain([minValue - dataOffset, maxValue + dataOffset])
+      .range([Height, 0])
+      .nice(10)
 
     const rightY = scaleLinear()
-      .domain([minValue, maxValue + dataOffset])
-      .range([Height, 0]);
+      .domain([minValue - dataOffset, maxValue + dataOffset])
+      .range([Height, 0])
+      .nice(10)
 
     chartRef.current.innerHTML = "";
 
@@ -92,25 +94,28 @@ const SPCChart = ({
       .append("g")
       .attr("transform", `translate(${marginLeft},${marginTop})`);
 
-    const dummyTarget = data.target
-    const dummyUpperLimit = data.upperLimit
-    const dummyLowerLimit = data.lowerLimit
-
     //target line
     svg.append("line")
       .attr("x1", 0)
       .attr("x2", Width)
-      .attr("y1", y(dummyTarget))
-      .attr("y2", y(dummyTarget))
+      .attr("y1", y(data.target))
+      .attr("y2", y(data.target))
       .attr("stroke", "black")
-      .attr("stroke-dasharray", "3 3");
+
+    //median line
+    svg.append("line")
+      .attr("x1", 0)
+      .attr("x2", Width)
+      .attr("y1", y(data.median))
+      .attr("y2", y(data.median))
+      .attr("stroke", "black")
 
     // Draw minimum lines
     svg.append("line")
       .attr("x1", 0)
       .attr("x2", Width)
-      .attr("y1", y(dummyLowerLimit))
-      .attr("y2", y(dummyLowerLimit))
+      .attr("y1", y(data.lowerLimit))
+      .attr("y2", y(data.lowerLimit))
       .attr("stroke", "green")
       .attr("stroke-dasharray", "3 3");
 
@@ -118,8 +123,8 @@ const SPCChart = ({
     svg.append("line")
       .attr("x1", 0)
       .attr("x2", Width)
-      .attr("y1", y(dummyUpperLimit - data.std))
-      .attr("y2", y(dummyUpperLimit - data.std))
+      .attr("y1", y(data.upperLimit - data.std))
+      .attr("y2", y(data.upperLimit - data.std))
       .attr("stroke", "blue")
       .attr("stroke-dasharray", "3 3");
 
@@ -127,8 +132,8 @@ const SPCChart = ({
     svg.append("line")
       .attr("x1", 0)
       .attr("x2", Width)
-      .attr("y1", y(dummyLowerLimit + data.std))
-      .attr("y2", y(dummyLowerLimit + data.std))
+      .attr("y1", y(data.lowerLimit + data.std))
+      .attr("y2", y(data.lowerLimit + data.std))
       .attr("stroke", "blue")
       .attr("stroke-dasharray", "3 3");
 
@@ -136,8 +141,8 @@ const SPCChart = ({
     svg.append("line")
       .attr("x1", 0)
       .attr("x2", Width)
-      .attr("y1", y(dummyUpperLimit))
-      .attr("y2", y(dummyUpperLimit))
+      .attr("y1", y(data.upperLimit))
+      .attr("y2", y(data.upperLimit))
       .attr("stroke", "red")
       .attr("stroke-dasharray", "3 3");
 
@@ -172,6 +177,59 @@ const SPCChart = ({
       .on("mouseout", tip.hide) // Hide tooltip on mouseout
       .call(tip); // Attach tooltip to chart elements
 
+    // Create label data
+    const labels = data.categorical.map((d, i) => ({
+      x: x(d.date),
+      y: y(d.value),
+      id: i,
+      label: `${d.value}`,
+      date: d.date,
+      value: d.value
+    }));
+
+    // Create lines
+    const lines = svg.selectAll('.label-line')
+      .data(labels)
+      .enter()
+      .append('line')
+      .attr('class', 'label-line')
+      .attr('x1', (d) => x(d.date))
+      .attr('y1', (d) => y(d.value))
+      .attr('x2', (d) => d.x)
+      .attr('y2', (d) => d.y)
+      .attr('stroke', 'black');
+
+
+    // Create force simulation
+    forceSimulation(labels)
+      .force("x", forceX().strength(0.2).x((d) => d.x))
+      .force("y", forceY().strength(0.2).y((d) => d.y))
+      .force("collide", forceCollide(circleRadius * 4)) // Use larger radius for collision
+      .on("tick", ticked);
+
+    // Function to reposition labels on each simulation tick
+    function ticked() {
+      const u = svg
+        .selectAll('.data-label')
+        .data(() => { return labels })
+
+      u.enter()
+        .append('text')
+        .attr('class', 'data-label')
+        .text((d) => d.label)
+        .merge(u as any)
+        .attr('x', (d) => d.x)
+        .attr('y', (d) => d.y)
+
+      u.exit().remove()
+
+      // Update line positions
+      lines
+        .attr('x1', (d) => x(d.date))
+        .attr('y1', (d) => y(d.value))
+        .attr('x2', (d) => d.x)
+        .attr('y2', (d) => d.y)
+    }
 
     // Draw x-axis
     svg.append("g")
@@ -202,14 +260,17 @@ const SPCChart = ({
     const yAxis = svg.append("g")
       .attr("transform", `translate(${Width}, 0)`)
       .attr("style", `font-size: ${textSize}em`)
-      .call(axisRight(rightY).tickValues([data.upperLimit, data.lowerLimit, data.lowerLimit + data.std, data.upperLimit - data.std]));
+      .call(axisRight(rightY)
+        .tickValues([data.upperLimit, data.lowerLimit + data.std, data.target, data.upperLimit - data.std, data.lowerLimit])
+        .tickFormat((d, i) => { if (Number.isInteger(d as number)) { return format('d')(d); } else { return format('.2f')(d); } })
+      );
     yAxis.selectAll(".tick text")
       .style("fill", function(d, i) {
         switch (i) {
           case 0: return "red";
-          case 1: return "green";
-          case 2: return "blue";
+          case 1: return "blue";
           case 3: return "blue";
+          case 4: return "green";
           default: return "black";
         }
       });
