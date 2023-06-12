@@ -11,6 +11,11 @@
       "kind": "Grouping"
     },
     {
+      "displayName": "STD",
+      "name": "STD",
+      "kind": "Measure"
+    },
+    {
       "displayName": "Upper Limit",
       "name": "UpperLimit",
       "kind": "Measure"
@@ -48,6 +53,11 @@
             },
             {
               "bind": {
+                "to": "STD"
+              }
+            },
+            {
+              "bind": {
                 "to": "UpperLimit"
               }
             },
@@ -72,6 +82,125 @@
     }
   ],
   "objects": {
+    "colors": {
+      "properties": {
+        "upperLimit": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "upperLimitRule": {
+          "type": {
+            "fillRule": {}
+          },
+          "rule": {
+            "inputRole": "Gradient",
+            "output": {
+              "property": "upperLimit",
+              "selector": [
+                "Category"
+              ]
+            }
+          }
+        },
+        "lowerLimit": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "lowerLimitRule": {
+          "type": {
+            "fillRule": {}
+          },
+          "rule": {
+            "inputRole": "Gradient",
+            "output": {
+              "property": "lowerLimit",
+              "selector": [
+                "Category"
+              ]
+            }
+          }
+        },
+        "median": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "medianRule": {
+          "type": {
+            "fillRule": {}
+          },
+          "rule": {
+            "inputRole": "Gradient",
+            "output": {
+              "property": "median",
+              "selector": [
+                "Category"
+              ]
+            }
+          }
+        },
+        "target": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "targetRule": {
+          "type": {
+            "fillRule": {}
+          },
+          "rule": {
+            "inputRole": "Gradient",
+            "output": {
+              "property": "target",
+              "selector": [
+                "Category"
+              ]
+            }
+          }
+        },
+        "STD": {
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "STDRule": {
+          "type": {
+            "fillRule": {}
+          },
+          "rule": {
+            "inputRole": "Gradient",
+            "output": {
+              "property": "STD",
+              "selector": [
+                "Category"
+              ]
+            }
+          }
+        }
+      }
+    },
     "general": {
       "properties": {
         "showTitleText": {

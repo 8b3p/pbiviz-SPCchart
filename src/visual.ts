@@ -28,7 +28,6 @@ export class Visual implements IVisual {
 
     public update(options: VisualUpdateOptions) {
         try {
-
             this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(VisualFormattingSettingsModel, options.dataViews);
             if (options.dataViews && options.dataViews[0]) {
                 try {
@@ -37,6 +36,11 @@ export class Visual implements IVisual {
                     const GeneralCard = cards[0].groups[0].slices;
                     // @ts-ignore
                     const MarginsCard = cards[1].groups[0].slices;
+                    // @ts-ignore
+                    const colors: VisualSettings["colors"] = cards[2].groups[0].slices.reduce((acc: VisualSettings["colors"], curr: any) => {
+                        acc[curr.control.properties.descriptor.propertyName] = curr.control.properties.value.value;
+                        return acc;
+                    }, {} as VisualSettings["colors"]);
                     const settings: VisualSettings = {
                         general: {
                             showTitle: GeneralCard[0].control.properties.value,
@@ -48,7 +52,15 @@ export class Visual implements IVisual {
                             marginBottom: MarginsCard[1].control.properties.value,
                             marginRight: MarginsCard[2].control.properties.value,
                             marginLeft: MarginsCard[3].control.properties.value,
-                        }
+                        },
+                        legends: {
+                            upperLimit: 'Upper Limit',
+                            lowerLimit: 'Lower Limit',
+                            target: 'Target',
+                            median: 'Median',
+                            STD: 'STD',
+                        },
+                        colors
                     }
                     const dataView: DataView = options.dataViews[0];
                     const data = this.getData(dataView);
@@ -72,6 +84,7 @@ export class Visual implements IVisual {
             console.dir(e)
         }
     }
+
     clear(message?: string) {
         if (!this.reactNoData || message) this.reactNoData = React.createElement(NoData, { message });
         ReactDOM.unmountComponentAtNode(this.target);
@@ -94,11 +107,14 @@ export class Visual implements IVisual {
             let values: number[];
             let upperLimit: number;
             let lowerLimit: number;
+            let STD: number;
             let target: number;
             let color: string[];
             for (let i = 0; i < dataView.categorical.values.length; i++) {
                 if (dataView.categorical.values[i].source.roles.PointValue) {
                     values = <number[]>dataView.categorical.values[i].values;
+                } else if (dataView.categorical.values[i].source.roles.STD) {
+                    STD = +dataView.categorical.values[i].values[0];
                 } else if (dataView.categorical.values[i].source.roles.UpperLimit) {
                     upperLimit = +dataView.categorical.values[i].values[0];
                 } else if (dataView.categorical.values[i].source.roles.LowerLimit) {
@@ -134,7 +150,7 @@ export class Visual implements IVisual {
                     }
                 }
             }
-            const median = values.length % 2 === 0 ? ((values[values.length / 2] + values[values.length / 2 - 1]) / 2) : values[values.length / 2];
+            const median = Math.floor(values.length) % 2 !== 0 ? ((values[Math.floor(values.length / 2)] + values[Math.floor(values.length / 2) + 1]) / 2) : values[values.length / 2];
             const categoryArray = new Array(values.length)
                 .fill({ value: null, date: null, color: "blue" })
                 .map((_, i) => ({
@@ -142,12 +158,12 @@ export class Visual implements IVisual {
                     date: category[i],
                     color: color && color.length ? color[i] === "G" ? "green" : color[i] === "R" ? "red" : "blue" : "blue"
                 }));
-            const std = this.std(categoryArray.map(d => d.value))
+            const std = STD ? STD : this.std(categoryArray.map(d => d.value))
             const Data: IData = {
                 upperLimit,
+                std,
                 lowerLimit,
                 target,
-                std,
                 median,
                 categorical: categoryArray
             }
@@ -162,13 +178,10 @@ export class Visual implements IVisual {
         const mean = data.reduce((sum, value) => sum + value, 0) / data.length;
         // Step 2: Calculate the squared differences from the mean
         const squaredDifferences = data.map((value) => (value - mean) ** 2);
-
         // Step 3: Calculate the variance
         const variance = squaredDifferences.reduce((sum, value) => sum + value, 0) / data.length;
-
         // Step 4: Calculate the standard deviation (square root of variance)
         const standardDeviation = Math.sqrt(variance);
-
         return standardDeviation;
     }
 }

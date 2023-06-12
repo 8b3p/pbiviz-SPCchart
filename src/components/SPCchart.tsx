@@ -27,6 +27,20 @@ export interface VisualSettings {
     marginRight: number;
     marginBottom: number;
     marginLeft: number;
+  },
+  colors: {
+    upperLimit: string;
+    lowerLimit: string;
+    STD: string;
+    target: string;
+    median: string;
+  },
+  legends: {
+    upperLimit: string;
+    lowerLimit: string;
+    STD: string;
+    target: string;
+    median: string;
   }
 }
 
@@ -52,7 +66,9 @@ const SPCChart = ({
       marginRight,
       marginBottom,
       marginLeft
-    }
+    },
+    colors,
+    legends
   }
 }: props) => {
   const chartRef = useRef(null);
@@ -61,7 +77,7 @@ const SPCChart = ({
   useLayoutEffect(() => {
     if (!data) return;
     const Width = width - marginLeft - marginRight;
-    const Height = height - (document.getElementById('extraContent') && document.getElementById('extraContent').offsetHeight) - marginTop - marginBottom;
+    const Height = height - (document.getElementById('legends') && document.getElementById('legends').offsetHeight) - marginTop - marginBottom;
 
     data.categorical = data.categorical.filter(d => {
       return d.date && d.value;
@@ -100,7 +116,7 @@ const SPCChart = ({
       .attr("x2", Width)
       .attr("y1", y(data.target))
       .attr("y2", y(data.target))
-      .attr("stroke", "black")
+      .attr("stroke", colors.target)
 
     //median line
     svg.append("line")
@@ -108,15 +124,15 @@ const SPCChart = ({
       .attr("x2", Width)
       .attr("y1", y(data.median))
       .attr("y2", y(data.median))
-      .attr("stroke", "black")
+      .attr("stroke", colors.median)
 
-    // Draw minimum lines
+    // Draw lowerLimit line
     svg.append("line")
       .attr("x1", 0)
       .attr("x2", Width)
       .attr("y1", y(data.lowerLimit))
       .attr("y2", y(data.lowerLimit))
-      .attr("stroke", "green")
+      .attr("stroke", colors.lowerLimit)
       .attr("stroke-dasharray", "3 3");
 
     // Draw upper STD line
@@ -125,7 +141,7 @@ const SPCChart = ({
       .attr("x2", Width)
       .attr("y1", y(data.upperLimit - data.std))
       .attr("y2", y(data.upperLimit - data.std))
-      .attr("stroke", "blue")
+      .attr("stroke", colors.STD)
       .attr("stroke-dasharray", "3 3");
 
     // Draw lower STD line
@@ -134,16 +150,16 @@ const SPCChart = ({
       .attr("x2", Width)
       .attr("y1", y(data.lowerLimit + data.std))
       .attr("y2", y(data.lowerLimit + data.std))
-      .attr("stroke", "blue")
+      .attr("stroke", colors.STD)
       .attr("stroke-dasharray", "3 3");
 
-    // Draw maximum lines
+    // Draw upperLimit line
     svg.append("line")
       .attr("x1", 0)
       .attr("x2", Width)
       .attr("y1", y(data.upperLimit))
       .attr("y2", y(data.upperLimit))
-      .attr("stroke", "red")
+      .attr("stroke", colors.upperLimit)
       .attr("stroke-dasharray", "3 3");
 
     // Add tooltip for data points
@@ -261,26 +277,95 @@ const SPCChart = ({
       .attr("transform", `translate(${Width}, 0)`)
       .attr("style", `font-size: ${textSize}em`)
       .call(axisRight(rightY)
-        .tickValues([data.upperLimit, data.lowerLimit + data.std, data.target, data.upperLimit - data.std, data.lowerLimit])
+        .tickValues([data.upperLimit, data.lowerLimit + data.std, data.target, data.median, data.upperLimit - data.std, data.lowerLimit])
         .tickFormat((d, i) => { if (Number.isInteger(d as number)) { return format('d')(d); } else { return format('.2f')(d); } })
       );
+
     yAxis.selectAll(".tick text")
       .style("fill", function(d, i) {
         switch (i) {
-          case 0: return "red";
-          case 1: return "blue";
-          case 3: return "blue";
-          case 4: return "green";
-          default: return "black";
+          case 0: return colors.upperLimit;
+          case 1: return colors.STD;
+          case 2: return colors.target;
+          case 3: return colors.median;
+          case 4: return colors.STD;
+          case 5: return colors.lowerLimit;
         }
       });
+
+    // // Add legends
+    // svg.append("text")
+    //   .attr("x", 0)
+    //   .attr("y", Height + 30) // Adjust the y-coordinate as needed
+    //   .style("fill", colors.upperLimit)
+    //   .style("font-size", `${textSize}em`)
+    //   .text(legends.upperLimit);
+    //
+    // svg.append("text")
+    //   .attr("x", 0)
+    //   .attr("y", Height + 50) // Adjust the y-coordinate as needed
+    //   .style("fill", colors.STD)
+    //   .style("font-size", `${textSize}em`)
+    //   .text(legends.STD);
+    //
+    // svg.append("text")
+    //   .attr("x", 0)
+    //   .attr("y", Height + 70) // Adjust the y-coordinate as needed
+    //   .style("fill", colors.target)
+    //   .style("font-size", `${textSize}em`)
+    //   .text(legends.target);
+    //
+    // svg.append("text")
+    //   .attr("x", 0)
+    //   .attr("y", Height + 90) // Adjust the y-coordinate as needed
+    //   .style("fill", colors.median)
+    //   .style("font-size", `${textSize}em`)
+    //   .text(legends.median);
+    //
+    // svg.append("text")
+    //   .attr("x", 0)
+    //   .attr("y", Height + 110) // Adjust the y-coordinate as needed
+    //   .style("fill", colors.lowerLimit)
+    //   .style("font-size", `${textSize}em`)
+    //   .text(legends.lowerLimit);
 
   }, [data, height, width, marginTop, marginRight, marginBottom, marginLeft, textSize, showTitle, circleRadius]);
 
 
   return (
     <div style={{ width: width, height: height }}>
-      <div id="extraContent">
+      <div id="legends" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', fontSize: `${textSize}em` }}>
+        {/* Display the legends */}
+        <div>
+          <svg width="20" height="10">
+            <line x1="0" y1="5" x2="20" y2="5" strokeDasharray="3" stroke={colors.upperLimit} strokeWidth="2" />
+          </svg>
+          <span style={{ color: colors.upperLimit, marginInline: '4px' }}>{legends.upperLimit}</span>
+        </div>
+        <div>
+          <svg width="20" height="10">
+            <line x1="0" y1="5" x2="20" y2="5" strokeDasharray="3" stroke={colors.STD} strokeWidth="2" />
+          </svg>
+          <span style={{ color: colors.STD, marginInline: '4px' }}>{legends.STD}</span>
+        </div>
+        <div>
+          <svg width="20" height="10">
+            <line x1="0" y1="5" x2="20" y2="5" stroke={colors.target} strokeWidth="2" />
+          </svg>
+          <span style={{ color: colors.target, marginInline: '4px' }}>{legends.target}</span>
+        </div>
+        <div>
+          <svg width="20" height="10">
+            <line x1="0" y1="5" x2="20" y2="5" stroke={colors.median} strokeWidth="2" />
+          </svg>
+          <span style={{ color: colors.median, marginInline: '4px' }}>{legends.median}</span>
+        </div>
+        <div>
+          <svg width="20" height="10">
+            <line x1="0" y1="5" x2="20" y2="5" strokeDasharray="3" stroke={colors.lowerLimit} strokeWidth="2" />
+          </svg>
+          <span style={{ color: colors.lowerLimit, marginInline: '4px' }}>{legends.lowerLimit}</span>
+        </div>
       </div>
       <div ref={containerRef} style={{ height: `calc(100% - ${document.querySelector('h1') && document.querySelector('h1').offsetHeight}px)`, width: '100%' }}>
         <svg ref={chartRef} preserveAspectRatio="xMidYMid meet" style={{ width: "100%", height: "100%" }}>
